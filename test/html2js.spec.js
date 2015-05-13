@@ -13,6 +13,7 @@ describe('html2js', function() {
     var opts ={
       isJade: true,
       extension: 'jade',
+      exclude: 'subfolder/excluded.tpl.jade',
       tplPath: '**/*.tpl.jade',
       moduleName: 'template.js',
       filename: 'example/output/template.js',

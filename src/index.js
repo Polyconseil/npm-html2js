@@ -29,13 +29,25 @@ module.exports = function(opts, callback) {
 
     var cs = CombinedStream.create()
     var tpl = [];
+    var filtered = [];
 
-    async.eachSeries(
+    async.filterSeries(
       files,
       function (file, done) {
-        if (file.indexOf(exclude))
+        strippedName = file.replace(basePath + '/', '');
+        if (exclude.indexOf(strippedName) !== -1) {
           return done();
+        }
 
+        filtered.push(file)
+        done()
+      },
+      function(results) {}
+    );
+
+    async.eachSeries(
+      filtered,
+      function (file, done) {
         cs.append(fs.createReadStream(path.resolve(file)))
         done()
       },
@@ -45,8 +57,7 @@ module.exports = function(opts, callback) {
 
         var filesIndex = 0;
         cs.pipe(through(function(chunk, enc, cb) {
-          var route = files[filesIndex]
-
+          var route = filtered[filesIndex]
           var html = chunk.toString();
 
           if (basePath)
