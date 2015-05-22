@@ -69,6 +69,16 @@ The name of the parent Angular module for each set of templates. Defaults to the
   npm-html2js ... -m 'myModule'
 ```
 
+##### prefix
+
+Add a prefix to the names generated in the templates
+
+**example:**
+```shell
+  npm-html2js ... -p '/foo/'
+```
+
+
 ##### jade
 
 if the filename ends with ```.jade```, the task will automatically render file's content using Jade then comile into JS
