@@ -14,15 +14,10 @@ var model = fs.readFileSync(path.join(__dirname, 'output/model.js'));
 describe('html2js', function() {
   it('should produce the expected js', function(done) {
     var opts ={
-      isJade: true,
-      extension: 'jade',
+      '_': ['**/*.tpl.{jade,html}'],
       exclude: 'subfolder/excluded.tpl.jade',
-      tplPath: '**/*.tpl.jade',
       prefix: '/foo/',
-      moduleName: 'template.js',
-      filename: 'example/output/template.js',
-      basePath: 'example/files',
-      quotes: true,
+      module: 'template.js',
       output: path.join(__dirname, 'output/template.js')
     };
     html2js(opts, function() {

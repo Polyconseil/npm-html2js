@@ -2,63 +2,16 @@
 
 'use strict';
 
-var fs             = require('fs');
-var path           = require('path');
-
+var fs = require('fs');
+var path = require('path');
 var html2js = require('./../src/index.js');
 
-var args = process.argv.slice(2);
+var argv = require('minimist')(process.argv.slice(2));
 
-
-var templateModule = fs.readFileSync(path.join(__dirname, './../tmpl/templateModule.tmpl'), 'utf-8');
-var templateCache  = fs.readFileSync(path.join(__dirname, './../tmpl/templateCache.tmpl'), 'utf-8');
-var usage          = fs.readFileSync(path.join(__dirname, './../tmpl/usage.md')).toString();
-
-var opts = {};
-opts.extension  = 'html';
-opts.tplPath    = '**/*.tpl.';
-opts.moduleName = 'app.template';
-opts.prefix     = '';
-
-var arg;
-while (args.length) {
-  arg = args.shift();
-  switch (arg) {
-    case '-h':
-    case '--help':
-      console.error(usage);
-      process.exit(0);
-      break;
-    case '-p':
-    case '--prefix':
-      opts.prefix = args.shift();
-      break;
-    case '-i':
-    case '--input':
-      opts.tplPath = args.shift();
-      break;
-    case '-o':
-    case '--output':
-      opts.filename = args.shift();
-      break;
-    case '-e':
-    case '--exclude':
-      opts.exclude = args.shift();
-      break;
-    case '-m':
-    case '--module':
-      opts.moduleName = args.shift();
-      break;
-    case '-b':
-    case '--base':
-      opts.basePath = args.shift();
-      break;
-    default:
-      break;
-  }
+if (argv.help) {
+  var usage = fs.readFileSync(path.join(__dirname, './../tmpl/usage.md')).toString();
+  console.error(usage);
+  process.exit(0);
 }
 
-opts.output = (opts.filename) ? path.join(process.cwd(), opts.filename) : null;
-opts.tplPath = (opts.tplPath === '**/*.tpl.') ?  opts.tplPath + opts.extension : opts.tplPath;
-
-html2js(opts);
+html2js(argv);

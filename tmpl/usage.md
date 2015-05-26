@@ -1,11 +1,10 @@
-Usage: npm-html2js [options] [command] [< in [> out]]
-              [file|dir ...]
+Usage: npm-html2js [options] <directories>
 
 Options:
 
-  -i, --input             Input file/directory
-  -o, --output            Output file
-  -e, --exclude           Excludes files/folders from globbing
-  -h, --help              Display help information
-  -m, --module            Module name
-  -j, --jade              are those jade templates?
+  --help          Display usage information
+
+  --prefix        String prefix that will be added to every path of templateCache (default: /)
+  --output        Output file (default: none)
+  --exclude       Excludes files/folders from globbing (default: none)
+  --module        Module name (default: app.templates)

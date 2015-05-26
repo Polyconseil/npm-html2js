@@ -2,95 +2,97 @@
 
 'use strict';
 
+var _ = require('lodash');
+var async = require('async');
 var CombinedStream = require('combined-stream');
-var async          = require('async');
-var fs             = require('fs');
-var glob           = require('glob');
-var jade           = require('jade');
-var path           = require('path');
-var through        = require('through2');
-var util           = require('util');
+var fs = require('fs');
+var glob = require('glob');
+var jade = require('jade');
+var path = require('path');
+var through = require('through2');
+var util = require('util');
 
+var templateCache = fs.readFileSync(path.join(__dirname, './../tmpl/templateCache.tmpl'), 'utf-8');
 var templateModule = fs.readFileSync(path.join(__dirname, './../tmpl/templateModule.tmpl'), 'utf-8');
-var templateCache  = fs.readFileSync(path.join(__dirname, './../tmpl/templateCache.tmpl'), 'utf-8');
 
-module.exports = function(opts, callback) {
-  opts = opts || {};
+module.exports = function(args, callback) {
+  var opts = {
+    '_': ['**/*.{jade,html}'],
+    module: 'app.templates',
+    prefix: '/',
+    output: null,
+    exclude: '',
+  };
+  args = args || {};
+  _.merge(opts, args);
 
-  var filename   = 'template.js';
+  opts._.forEach(function(dir) {
 
-  var tplPath    = opts.tplPath || path.join(process.cwd(), '**/*.tpl.html');
-  var output     = opts.output || path.join(process.cwd(), filename);
-  var prefix     = opts.prefix || '';
-  var moduleName = opts.moduleName || 'app.template';
-  var basePath   = opts.basePath;
-  var quotes     = opts.quotes;
-  var exclude    = opts.exclude || '';
+    glob(dir, function (err, files) {
+      if (err) {
+        throw new Error(err);
+      }
 
-  glob(tplPath, function (err, files) {
-    if (err) {
-      throw new Error(err);
-    }
+      var cs = CombinedStream.create();
+      var tpl = [];
+      var filtered = [];
 
-    var cs = CombinedStream.create();
-    var tpl = [];
-    var filtered = [];
-
-    async.filterSeries(
-      files,
-      function (file, done) {
-        var strippedName = file.replace(basePath + '/', '');
-        if (exclude.indexOf(strippedName) !== -1) {
+      async.filterSeries(files, function (file, done) {
+        if (file.indexOf(opts.exclude) !== -1) {
           return done();
         }
 
         filtered.push(file);
         done();
-      },
-      function(results) {}
-    );
+      }, function(results) {
+      });
 
-    async.eachSeries(
-      filtered,
-      function (file, done) {
-        cs.append(fs.createReadStream(path.resolve(file)));
-        done();
-      },
-      function (err) {
-        if (err) {
-          throw err;
+      async.eachSeries(
+        filtered,
+        function (file, done) {
+          cs.append(fs.createReadStream(path.resolve(file)));
+          done();
+        },
+        function (err) {
+          if (err) {
+            throw err;
+          }
+
+          var filesIndex = 0;
+          cs.pipe(through(function(chunk, enc, cb) {
+            var route = filtered[filesIndex];
+            var html = chunk.toString();
+
+            if (route.indexOf('.jade') !== -1) {
+              html = jade.render(html, { pretty: true });
+            }
+
+            html = html.replace(/\\/g, '\\\\');
+            html = html.replace(/'/g, '\\\'');
+            html = html.replace(/\r?\n/g, '\\n\' +\n    \'');
+
+            var tmpl = util.format(templateCache, opts.prefix + route, html);
+            tpl.push(tmpl);
+
+            filesIndex++;
+
+            cb();
+          }));
+        }
+      );
+
+      cs.on('end', function() {
+        var template = util.format(templateModule, opts.module, tpl.join(''));
+        if (opts.output) {
+          fs.writeFileSync(opts.output, template, 'utf8');
+        } else {
+          console.log(template);
         }
 
-        var filesIndex = 0;
-        cs.pipe(through(function(chunk, enc, cb) {
-          var route = filtered[filesIndex];
-          var html = chunk.toString();
-
-          if (basePath)
-            route = route.replace(basePath + '/', '');
-          if (route.indexOf('.jade') !== -1)
-            html = jade.render(html, { pretty: true });
-
-          html = html.replace(/\\/g, '\\\\');
-          html = html.replace(/'/g, '\\\'');
-          html = html.replace(/\r?\n/g, '\\n\' +\n    \'');
-
-          var tmpl = util.format(templateCache, prefix + route, html);
-          tpl.push(tmpl);
-
-          filesIndex++;
-
-          cb();
-        }));
-      }
-    );
-
-    cs.on('end', function() {
-      var template = util.format(templateModule, moduleName, tpl.join(''));
-      fs.writeFileSync(output, template, 'utf8');
-
-      if (callback)
-        callback();
+        if (callback)
+          callback();
+      });
     });
+
   });
 };
