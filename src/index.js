@@ -27,7 +27,16 @@ module.exports = function(args, callback) {
 
   opts._.forEach(function(dir) {
     var files = glob.sync(dir).filter(function(file) {
-      return ! (opts.exclude && file.indexOf(opts.exclude) !== -1);
+      if (opts.exclude !== null) {
+        if (opts.exclude.constructor !== Array) {
+          opts.exclude = [opts.exclude];
+        }
+        return ! _.some(opts.exclude, function(pattern) {
+          var re =  new RegExp(pattern);
+          return re.test(file);
+        });
+      }
+      return true;
     });
 
     files.forEach(function(file) {
@@ -38,7 +47,7 @@ module.exports = function(args, callback) {
       }
 
       data = data.replace(/\\/g, '\\\\');
-      data = data.replace(/\n$/, '')
+      data = data.replace(/\n$/, '');
       data = data.replace(/'/g, '\\\'');
       data = data.replace(/\r?\n/g, '\\n\' +\n    \'');
 
