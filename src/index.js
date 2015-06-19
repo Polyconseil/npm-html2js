@@ -4,7 +4,6 @@
 
 var _ = require('lodash');
 var fs = require('fs');
-var glob = require('glob');
 var jade = require('jade');
 var path = require('path');
 var util = require('util');
@@ -14,45 +13,28 @@ var templateModule = fs.readFileSync(path.join(__dirname, './../tmpl/templateMod
 
 module.exports = function(args, callback) {
   var opts = {
-    '_': ['**/*.{jade,html}'],
+    '_': [],
     module: 'app.templates',
     prefix: '/',
     output: null,
-    exclude: null,
   };
   args = args || {};
   _.merge(opts, args);
 
   var tpl = [];
+  opts._.forEach(function(file) {
+    var fullpath = path.resolve(file);
+    var data = fs.readFileSync(fullpath, 'utf-8');
+    if (fullpath.indexOf('.jade') !== -1) {
+      data = jade.render(data, { pretty: true });
+    }
 
-  opts._.forEach(function(dir) {
-    var files = glob.sync(dir).filter(function(file) {
-      if (opts.exclude !== null) {
-        if (opts.exclude.constructor !== Array) {
-          opts.exclude = [opts.exclude];
-        }
-        return ! _.some(opts.exclude, function(pattern) {
-          var re =  new RegExp(pattern);
-          return re.test(file);
-        });
-      }
-      return true;
-    });
+    data = data.replace(/\\/g, '\\\\');
+    data = data.replace(/\n$/, '');
+    data = data.replace(/'/g, '\\\'');
+    data = data.replace(/\r?\n/g, '\\n\' +\n    \'');
 
-    files.forEach(function(file) {
-      var fullpath = path.resolve(file);
-      var data = fs.readFileSync(fullpath, 'utf-8');
-      if (fullpath.indexOf('.jade') !== -1) {
-        data = jade.render(data, { pretty: true });
-      }
-
-      data = data.replace(/\\/g, '\\\\');
-      data = data.replace(/\n$/, '');
-      data = data.replace(/'/g, '\\\'');
-      data = data.replace(/\r?\n/g, '\\n\' +\n    \'');
-
-      tpl.push(util.format(templateCache, opts.prefix + file, data));
-    });
+    tpl.push(util.format(templateCache, opts.prefix + file, data));
   });
 
   var data = util.format(templateModule, opts.module, tpl.join(''));
