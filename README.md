@@ -3,11 +3,11 @@
 Use npm as a build tool to load all your jade/html templates into your $templateCache.
 
 ```shell
-$ npm-html2js -i 'src/**/*.jade'
+npm-html2js --prefix foo file.jade
 
 angular.module('template.js', []);
   .run(['$templateCache', function($templateCache) {
-    .$templateCache.put('files/file1.tpl.jade',
+    .$templateCache.put('foo/file.jade',
     '<div>\n' +
     '  <h1>Hello World from file1!</h1>\n' +
     '</div>')
@@ -25,4 +25,3 @@ angular.module('template.js', []);
     '</div>')
   }]);
 ```
-
