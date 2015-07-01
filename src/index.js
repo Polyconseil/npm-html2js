@@ -15,7 +15,7 @@ module.exports = function(args, callback) {
   var opts = {
     '_': [],
     module: 'app.templates',
-    prefix: '/',
+    prefix: '',
     output: null,
   };
   args = args || {};
